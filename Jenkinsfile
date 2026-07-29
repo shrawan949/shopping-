@@ -61,8 +61,8 @@ pipeline{
         }
         stage('Deploy to kubernetes'){
             steps{
-                sh 'kubectl set image deployment/java-pro con1=shrawanambarte0101/backend:${BUILD_NUMBER}'
-                sh 'kubectl set image deployment/java-pro-front con1=shrawanambarte0101/frontend:${BUILD_NUMBER}'
+                sh 'kubectl set image deployment/java-pro con1=shrawanambarte0101/backend:${BUILD_NUMBER} -n java-project'
+                sh 'kubectl set image deployment/java-pro-front con1=shrawanambarte0101/frontend:${BUILD_NUMBER} -n java-project'
             }
         }
     }
