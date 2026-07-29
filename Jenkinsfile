@@ -6,6 +6,9 @@ pipeline{
         FRONTEND_IMAGE = "shrawanambarte0101/frontend:${BUILD_NUMBER}"
 
     }
+    tools{
+        maven 'maven'
+    }
     stages{
         stage('checkout'){
             steps{
