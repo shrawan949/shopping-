@@ -7,7 +7,7 @@ pipeline{
 
     }
     tools{
-        maven 'maven'
+        maven 'maven-project'
     }
     stages{
         stage('checkout'){
