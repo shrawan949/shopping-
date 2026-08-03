@@ -1,83 +1,97 @@
-pipeline{
+pipeline {
     agent any
-    environment{
-        DOCKER_USERNAME = "shrawanambarte0101"
-        BACKEND_IMAGE = "shrawanambarte0101/backend:${BUILD_NUMBER}"
-        FRONTEND_IMAGE = "shrawanambarte0101/frontend:${BUILD_NUMBER}"
 
+    environment {
+        DOCKER_USERNAME = "shrawanambarte0101"
+        BACKEND_IMAGE = "${DOCKER_USERNAME}/shopping-backend:${BUILD_NUMBER}"
+        FRONTEND_IMAGE = "${DOCKER_USERNAME}/shopping-frontend:${BUILD_NUMBER}"
     }
-    tools{
-        maven 'maven-project'
-    }
-    stages{
-        stage('checkout'){
-            steps{
+
+    stages {
+
+        stage('Checkout') {
+            steps {
                 checkout scm
             }
         }
-        stage('Build Backend'){
-            steps{
-                dir ('backend'){
+
+        stage('Build Backend') {
+            steps {
+                dir('backend') {
                     sh 'mvn clean package'
                 }
             }
         }
-        stage('Build Backend Docker Image'){
-            steps{
-                dir ('backend'){
-                    sh 'docker build -t shrawanambarte0101/backend:${BUILD_NUMBER} .'
+
+        stage('Build Docker Images') {
+            steps {
+
+                dir('backend') {
+                    sh "docker build -t ${BACKEND_IMAGE} ."
                 }
+
+                dir('frontend') {
+                    sh "docker build -t ${FRONTEND_IMAGE} ."
+                }
+
             }
         }
-        stage('Build frontend image'){
-            steps{
-                dir ('frontend'){
-                    sh 'docker build -t shrawanambarte0101/frontend:${BUILD_NUMBER} .'
-                }
-            }
-        }
-        stage('Docker login'){
-            steps{
-                  withCredentials([
+
+        stage('Docker Login') {
+            steps {
+
+                withCredentials([
                     usernamePassword(
                         credentialsId: 'docker-cred',
                         usernameVariable: 'USERNAME',
                         passwordVariable: 'PASSWORD'
                     )
                 ]) {
+
                     sh '''
                     echo "$PASSWORD" | docker login \
                     -u "$USERNAME" \
                     --password-stdin
                     '''
+
                 }
             }
         }
-        stage('docker image push '){
-            steps{
-                sh 'docker push shrawanambarte0101/frontend:${BUILD_NUMBER}'
-                sh 'docker push shrawanambarte0101/backend:${BUILD_NUMBER}'
+
+        stage('Push Docker Images') {
+            steps {
+
+                sh "docker push ${BACKEND_IMAGE}"
+                sh "docker push ${FRONTEND_IMAGE}"
+
             }
         }
-        stage('Deploy to kubernetes'){
-            steps{
-                sh 'kubectl set image deployment/java-pro con1=shrawanambarte0101/backend:${BUILD_NUMBER} -n java-project'
-                sh 'kubectl set image deployment/java-pro-front con1=shrawanambarte0101/frontend:${BUILD_NUMBER} -n java-project'
+
+        stage('Deploy to Kubernetes') {
+            steps {
+
+                sh """
+                kubectl set image deployment/shopping-backend \
+                backend=${BACKEND_IMAGE} \
+                -n shopping
+                """
+
+                sh """
+                kubectl set image deployment/shopping-frontend \
+                frontend=${FRONTEND_IMAGE} \
+                -n shopping
+                """
+
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+
+                sh 'kubectl rollout status deployment/shopping-backend -n shopping'
+                sh 'kubectl rollout status deployment/shopping-frontend -n shopping'
+
             }
         }
     }
-    post {
-        success {
-            echo 'Deployment completed successfully.'
-        }
-
-        failure {
-            echo 'Pipeline failed.'
-        }
-
-        always {
-            sh 'docker logout || true'
-        }
-    }
-
 }
