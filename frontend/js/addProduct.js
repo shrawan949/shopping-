@@ -1,4 +1,4 @@
-const api="http://localhost:8080/products";
+const api="http://3.108.6.104:8080/products";
 
 document
 .getElementById("productForm")
